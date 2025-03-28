@@ -1,0 +1,11 @@
+services:
+  rbd-exporter:
+    image: boyvinall/rbd-exporter
+    container_name: rbd-exporter
+    restart: always
+    command: [
+      -v,
+      serve
+    ]
+    ports:
+      - 8080:8080

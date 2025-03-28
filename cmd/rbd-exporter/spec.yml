@@ -1,0 +1,21 @@
+service_type: container
+service_name: rbdexporter
+placement:
+  count: 1
+  label: mgr
+spec:
+  image: docker.io/library/nginx:alpine
+  entrypoint: /usr/bin/foo
+  # uid: 1000
+  # gid: 1000
+  # args:
+  #   - "--net=host"
+  #   - "--cpus=2"
+  # ports:
+  #   - 8080
+  #   - 8443
+  # envs:
+  #   - SECRET=mypassword
+  #   - PORT=8080
+  #   - PUID=1000
+  #   - PGID=1000
