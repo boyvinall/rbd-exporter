@@ -112,7 +112,7 @@ func main() {
 				&cli.StringFlag{
 					Name:  "listen-address",
 					Usage: "Address to listen on for web interface and telemetry",
-					Value: ":8080",
+					Value: ":9876",
 				},
 				&cli.StringSliceFlag{
 					Name:  "pool",
