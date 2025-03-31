@@ -1,9 +1,5 @@
-FROM alpine:3.17.3 AS builder
-RUN apk add ca-certificates
-
-FROM scratch
+FROM alpine:3.21.3
+RUN apk add ca-certificates ceph-common
 COPY ./out/linux-amd64/rbd-exporter /
-COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 USER nobody
 ENTRYPOINT ["/rbd-exporter"]
