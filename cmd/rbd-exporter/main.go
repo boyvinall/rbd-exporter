@@ -15,6 +15,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	cli "github.com/urfave/cli/v2"
+
+	"github.com/boyvinall/rbd-exporter/pkg/collector"
 )
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
@@ -30,8 +32,8 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func serve(listenAddress string, pools []string) error {
 
-	collector := Collector{Pools: pools}
-	err := prometheus.Register(&collector)
+	collector := collector.New(pools, &collector.RBDMirrorPoolStatus{})
+	err := prometheus.Register(collector)
 	if err != nil {
 		return err
 	}

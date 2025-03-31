@@ -1,59 +1,49 @@
-package main
+// Package collector provides a Prometheus collector for RBD mirror pool status
+package collector
 
 import (
-	"encoding/json"
-	"log/slog"
-	"os/exec"
-
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Collector is a Prometheus exporter for RBD mirror pool status
-type Collector struct {
-	Pools []string
+// PoolStatusProvider is an interface that defines a method to get the status of an RBD mirror pool
+// This interface is used to decouple the collector from the actual implementation of getting the pool status
+// which allows for easier testing and mocking of the pool status retrieval
+type PoolStatusProvider interface {
+	GetPoolStatus(pool string) (PoolStatus, error)
 }
 
-type poolStatusSummary struct {
+// Collector is a Prometheus exporter for RBD mirror pool status
+type Collector struct {
+	pools    []string
+	provider PoolStatusProvider
+}
+
+// New creates a new Collector instance
+func New(pools []string, provider PoolStatusProvider) *Collector {
+	return &Collector{
+		pools:    pools,
+		provider: provider,
+	}
+}
+
+// PoolStatusSummary is used by [PoolStatus]
+// Having a separate struct for the summary allows us to more easily initialize local variables
+type PoolStatusSummary struct {
 	Health       string         `json:"health"`
 	DaemonHealth string         `json:"daemon_health,omitempty"`
 	ImageHealth  string         `json:"image_health,omitempty"`
 	States       map[string]int `json:"states"`
 }
 
-type poolStatus struct {
-	Summary poolStatusSummary `json:"summary"`
+// PoolStatus represents the status of an RBD mirror pool
+// It is deserialises the JSON output from the `rbd mirror pool status` command
+type PoolStatus struct {
+	Summary PoolStatusSummary `json:"summary"`
 }
 
-func collectMetrics(pool string) ([]prometheus.Metric, error) {
-	// Simulate collecting metrics from the pool
-	// In a real implementation, this would involve querying the RBD cluster
-	// and collecting relevant metrics.
-
-	// s := poolStatus{
-	// 	Summary: poolStatusSummary{
-	// 		Health: "OK",
-	// 		States: map[string]int{
-	// 			"replaying": 7,
-	// 			"stopped":   6677,
-	// 		},
-	// 	},
-	// }
-
-	b, err := exec.Command("rbd", "mirror", "pool", "status", "--format", "json", pool).Output()
+func (c *Collector) collectPoolMetrics(pool string) ([]prometheus.Metric, error) {
+	s, err := c.provider.GetPoolStatus(pool)
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			slog.Error("rbd mirror pool status", "pool", pool, "error", string(exitErr.Stderr))
-		} else {
-			slog.Error("rbd mirror pool status", "pool", pool, "error", err)
-		}
-		return nil, err
-	}
-
-	// Unmarshal the JSON output into the poolStatus struct
-	var s poolStatus
-	err = json.Unmarshal(b, &s)
-	if err != nil {
-		slog.Error("failed to unmarshal JSON", "error", err)
 		return nil, err
 	}
 
@@ -79,10 +69,10 @@ func collectMetrics(pool string) ([]prometheus.Metric, error) {
 }
 
 // Collect implements the [prometheus.Collector] interface
-func (e *Collector) Collect(ch chan<- prometheus.Metric) {
-	for _, pool := range e.Pools {
+func (c *Collector) Collect(ch chan<- prometheus.Metric) {
+	for _, pool := range c.pools {
 		// Collect metrics for each pool
-		metrics, err := collectMetrics(pool)
+		metrics, err := c.collectPoolMetrics(pool)
 		if err != nil {
 			ch <- prometheus.NewInvalidMetric(prometheus.NewDesc("rbd_exporter_error", "Error collecting metrics", nil, nil), err)
 			continue
@@ -95,6 +85,6 @@ func (e *Collector) Collect(ch chan<- prometheus.Metric) {
 }
 
 // Describe implements the [prometheus.Collector] interface
-func (e *Collector) Describe(ch chan<- *prometheus.Desc) {
-	prometheus.DescribeByCollect(e, ch)
+func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
+	prometheus.DescribeByCollect(c, ch)
 }
