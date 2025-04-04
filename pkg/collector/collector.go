@@ -50,7 +50,7 @@ func (c *Collector) collectPoolMetrics(pool string) ([]prometheus.Metric, error)
 	// For each known-possible state, ensure it exists in the summary and initialize it to 0 if it doesn't
 	// We could do this by hardcoding the individual states in the struct definition, but it's nice to be able
 	// to know about new states without having to update the code.
-	for _, state := range []string{"replaying", "starting_replay", "stopping_replay", "stopped", "down+unknown"} {
+	for _, state := range []string{"replaying", "starting_replay", "stopping_replay", "stopped", "down+unknown", "unknown"} {
 		s.Summary.States[state] += 0
 	}
 
