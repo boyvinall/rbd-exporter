@@ -58,6 +58,7 @@ func TestCollector_collectPoolMetrics(t *testing.T) {
 				"starting_replay": 0,
 				"stopping_replay": 0,
 				"down+unknown":    0,
+				"unknown":         0,
 			},
 		},
 		{
@@ -76,6 +77,7 @@ func TestCollector_collectPoolMetrics(t *testing.T) {
 								"starting_replay": 789,
 								"stopping_replay": 101112,
 								"down+unknown":    131415,
+								"unknown":         0,
 							},
 						},
 					},
@@ -90,6 +92,7 @@ func TestCollector_collectPoolMetrics(t *testing.T) {
 				"starting_replay": 789,
 				"stopping_replay": 101112,
 				"down+unknown":    131415,
+				"unknown":         0,
 			},
 		},
 		{
@@ -119,6 +122,7 @@ func TestCollector_collectPoolMetrics(t *testing.T) {
 				"starting_replay": 0,
 				"stopping_replay": 0,
 				"down+unknown":    0,
+				"unknown":         0,
 				"foo":             6677,
 			},
 		},
