@@ -1,21 +1,26 @@
 .PHONY: all
-all: build lint
+all: build docker-build lint
+
+.PHONY: release
+release: docker-push
 
 define PROMPT
-	@echo
+	@echo " "
 	@echo "**********************************************************"
 	@echo "*"
 	@echo "*   $(1)"
 	@echo "*"
 	@echo "**********************************************************"
-	@echo
+	@echo " "
 endef
 
 BINARY_NAME=rbd-exporter
 BINARIES=\
 	./out/linux-amd64/$(BINARY_NAME) \
 	./out/linux-arm64/$(BINARY_NAME) \
-	./out/darwin-amd64/$(BINARY_NAME) \
+	./out/darwin-amd64/$(BINARY_NAME)
+
+TAG?=latest
 
 ./out/linux-amd64/% : GOOS=linux
 ./out/linux-amd64/% : GOARCH=amd64
@@ -30,21 +35,24 @@ $(BINARIES):
 	GOARCH=$(GOARCH) GOOS=$(GOOS) CGO_ENABLED=0 go build -o $@ ./cmd/rbd-exporter
 
 .PHONY: build
-build: $(BINARIES) docker-build
+build: $(BINARIES)
+
+.PHONY: test
+test:
+	$(call PROMPT,$@)
+	go tool gocov test -v ./... | go tool gocov-html > coverage.html
 
 .PHONY: lint
 lint:
 	$(call PROMPT,$@)
 	golangci-lint run
 
-.PHONY: snyk
-snyk:
-	$(call PROMPT,$@)
-	snyk test
-
-GOHOSTARCH=$(shell go env GOHOSTARCH)
-
 .PHONY: docker-build
-docker-build: ./out/linux-$(GOHOSTARCH)/$(BINARY_NAME)
+docker-build: ./out/linux-amd64/$(BINARY_NAME)
 	$(call PROMPT,$@)
-	docker build -t boyvinall/rbd-exporter .
+	docker build --platform linux/amd64 -t boyvinall/rbd-exporter:$(TAG) .
+
+.PHONY: docker-push
+docker-push: docker-build
+	$(call PROMPT,$@)
+	docker push boyvinall/rbd-exporter:$(TAG)

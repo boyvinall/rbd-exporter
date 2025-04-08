@@ -1,0 +1,24 @@
+name: PR Title Semantic Release Commit Lint
+
+on:
+  workflow_call:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read        # for checkout
+  pull-requests: write  # to comment on released pull requests
+
+jobs:
+  commitlint:
+    container:
+      image: commitlint/commitlint:latest@sha256:af27e796a83d69dfeb6307b1734942e959543eecd18736585db13a83ae1ca307
+
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4.2.2
+        name: Checkout
+      # Checks that the PR title conform to semantic release
+      - name: Validate PR commits with commitlint
+        run: echo "${{ github.event.pull_request.title }}" | commitlint --config .github/commitlint.config.js --verbose
