@@ -23,6 +23,9 @@ concurrency:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write   # allow the action to annotate code in the PR
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
