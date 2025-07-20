@@ -1,4 +1,4 @@
-FROM alpine:3.22.0
+FROM alpine:3.22.1
 RUN apk add ca-certificates ceph-common
 COPY ./out/linux-amd64/rbd-exporter /
 USER nobody
