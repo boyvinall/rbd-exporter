@@ -32,7 +32,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func serve(listenAddress string, pools []string) error {
 
-	collector := collector.New(pools, &collector.RBDMirrorPoolStatus{})
+	collector := collector.New(pools, &collector.RBDMirrorPoolStatus{}, &collector.CephOrchPS{}, &collector.RadosListWatchers{})
 	err := prometheus.Register(collector)
 	if err != nil {
 		return err

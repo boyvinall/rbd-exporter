@@ -12,17 +12,33 @@ type PoolStatusProvider interface {
 	GetPoolStatus(pool string) (PoolStatus, error)
 }
 
+// DaemonStatusProvider is an interface that defines a method to get the status of cephadm-managed daemons
+// of a given type, as reported by `ceph orch ps`
+type DaemonStatusProvider interface {
+	GetDaemonStatuses(daemonType string) ([]DaemonStatus, error)
+}
+
+// WatcherProvider is an interface that defines a method to get the watchers of a RADOS object,
+// as reported by `rados listwatchers`
+type WatcherProvider interface {
+	GetWatchers(pool, object string) ([]Watcher, error)
+}
+
 // Collector is a Prometheus exporter for RBD mirror pool status
 type Collector struct {
-	pools    []string
-	provider PoolStatusProvider
+	pools           []string
+	provider        PoolStatusProvider
+	daemonProvider  DaemonStatusProvider
+	watcherProvider WatcherProvider
 }
 
 // New creates a new Collector instance
-func New(pools []string, provider PoolStatusProvider) *Collector {
+func New(pools []string, provider PoolStatusProvider, daemonProvider DaemonStatusProvider, watcherProvider WatcherProvider) *Collector {
 	return &Collector{
-		pools:    pools,
-		provider: provider,
+		pools:           pools,
+		provider:        provider,
+		daemonProvider:  daemonProvider,
+		watcherProvider: watcherProvider,
 	}
 }
 
@@ -39,6 +55,22 @@ type PoolStatusSummary struct {
 // It is deserialises the JSON output from the `rbd mirror pool status` command
 type PoolStatus struct {
 	Summary PoolStatusSummary `json:"summary"`
+}
+
+// DaemonStatus represents a single daemon
+// It is deserialised from the JSON output of the `ceph orch ps` command
+type DaemonStatus struct {
+	DaemonName string `json:"daemon_name"`
+	Hostname   string `json:"hostname"`
+	StatusDesc string `json:"status_desc"`
+}
+
+// Watcher represents a single watcher of a RADOS object
+// It is parsed from the output of the `rados listwatchers` command
+type Watcher struct {
+	Address string
+	Client  string
+	Cookie  string
 }
 
 func (c *Collector) collectPoolMetrics(pool string) ([]prometheus.Metric, error) {
@@ -68,20 +100,71 @@ func (c *Collector) collectPoolMetrics(pool string) ([]prometheus.Metric, error)
 	return metrics, nil
 }
 
+func (c *Collector) collectDaemonMetrics() ([]prometheus.Metric, error) {
+	daemons, err := c.daemonProvider.GetDaemonStatuses("rbd-mirror")
+	if err != nil {
+		return nil, err
+	}
+
+	// As with pool states, ensure each known-possible status is reported even when no daemon has it,
+	// while still passing through any status we don't know about.
+	counts := map[string]int{}
+	for _, status := range []string{"running", "starting", "stopped", "error", "unknown"} {
+		counts[status] = 0
+	}
+	for _, d := range daemons {
+		counts[d.StatusDesc]++
+	}
+
+	metrics := make([]prometheus.Metric, 0, len(counts))
+	for status, count := range counts {
+		metrics = append(metrics, prometheus.MustNewConstMetric(
+			prometheus.NewDesc("rbd_mirror_daemons", "Count of cephadm-managed rbd-mirror daemons by status", []string{"status"}, nil),
+			prometheus.GaugeValue,
+			float64(count),
+			status,
+		))
+	}
+
+	return metrics, nil
+}
+
+func (c *Collector) collectLeaderWatcherMetrics(pool string) ([]prometheus.Metric, error) {
+	watchers, err := c.watcherProvider.GetWatchers(pool, "rbd_mirror_leader")
+	if err != nil {
+		return nil, err
+	}
+
+	return []prometheus.Metric{
+		prometheus.MustNewConstMetric(
+			prometheus.NewDesc("rbd_mirror_leader_watchers", "Count of watchers on the rbd_mirror_leader object", []string{"pool"}, nil),
+			prometheus.GaugeValue,
+			float64(len(watchers)),
+			pool,
+		),
+	}, nil
+}
+
 // Collect implements the [prometheus.Collector] interface
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
-	for _, pool := range c.pools {
-		// Collect metrics for each pool
-		metrics, err := c.collectPoolMetrics(pool)
+	send := func(metrics []prometheus.Metric, err error) {
 		if err != nil {
 			ch <- prometheus.NewInvalidMetric(prometheus.NewDesc("rbd_exporter_error", "Error collecting metrics", nil, nil), err)
-			continue
+			return
 		}
 
 		for _, metric := range metrics {
 			ch <- metric
 		}
 	}
+
+	for _, pool := range c.pools {
+		// Collect metrics for each pool
+		send(c.collectPoolMetrics(pool))
+		send(c.collectLeaderWatcherMetrics(pool))
+	}
+
+	send(c.collectDaemonMetrics())
 }
 
 // Describe implements the [prometheus.Collector] interface
