@@ -121,7 +121,7 @@ func (c *Collector) collectDaemonMetrics(daemonType string) ([]prometheus.Metric
 	metrics := make([]prometheus.Metric, 0, len(counts))
 	for status, count := range counts {
 		metrics = append(metrics, prometheus.MustNewConstMetric(
-			prometheus.NewDesc("ceph_daemons", "Count of cephadm-managed Ceph daemons by type and status", []string{"daemon_type", "status"}, nil),
+			prometheus.NewDesc("cephadm_daemon_status", "Count of cephadm-managed Ceph daemons by type and status", []string{"daemon_type", "status"}, nil),
 			prometheus.GaugeValue,
 			float64(count),
 			daemonType,

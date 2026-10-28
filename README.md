@@ -6,8 +6,8 @@ It exports:
 | Metric | Source |
 | ------ | ------ |
 | `rbd_mirror_pool_status_state{pool,state}` | `rbd mirror pool status <pool>` |
-| `ceph_daemons{daemon_type,status}` | `ceph orch ps --daemon-type <daemon>` |
 | `rbd_mirror_leader_watchers{pool}` | `rados -p <pool> listwatchers rbd_mirror_leader` |
+| `cephadm_daemon_status{daemon_type,status}` | `ceph orch ps --daemon-type <daemon>` |
 
 See <https://docs.ceph.com/en/reef/rbd/rbd-mirroring/#mirror-status> for more info on what the pool status means.
 
