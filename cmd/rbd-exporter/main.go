@@ -38,8 +38,8 @@ func serve(listenAddress string, pools, daemonTypes []string) error {
 		daemonTypes = []string{"rbd-mirror"}
 	}
 
-	collector := collector.New(pools, daemonTypes, &collector.RBDMirrorPoolStatus{}, &collector.CephOrchPS{}, &collector.RadosListWatchers{})
-	err := prometheus.Register(collector)
+	c := collector.New(pools, daemonTypes, &collector.RBDMirrorPoolStatus{}, &collector.CephOrchPS{}, &collector.RadosListWatchers{})
+	err := prometheus.Register(c)
 	if err != nil {
 		return err
 	}

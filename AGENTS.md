@@ -11,7 +11,7 @@ An experimental Prometheus exporter for the health of Ceph RBD mirroring. It she
 ```sh
 make build          # cross-compile (CGO_ENABLED=0) to out/{linux-amd64,linux-arm64,darwin-amd64}/rbd-exporter
 make test           # go test via `go tool gocov`, writes coverage.html
-make lint           # golangci-lint run (CI pins v1.64.5; .golangci.yml uses the v1 config format)
+make lint           # golangci-lint run, pinned to v2.15.0 and built with the project toolchain (same as CI)
 make docker-build   # builds out/linux-amd64 binary, then image boyvinall/rbd-exporter:$(TAG)
 
 go test ./pkg/collector -run TestCollector_collectPoolMetrics/return-all-data   # single test case
@@ -19,8 +19,6 @@ go run ./cmd/rbd-exporter -v serve --pool <pool> [--pool <pool2>] [--listen-addr
 ```
 
 `gocov` and `gocov-html` are declared as Go tool dependencies in `go.mod`, so `go tool` resolves them and you don't install them separately.
-
-A golangci-lint v2 install (e.g. the current Homebrew version) refuses the v1-format `.golangci.yml` with "unsupported version of the configuration". To lint exactly as CI does, run `go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.5 run`.
 
 ## Architecture
 

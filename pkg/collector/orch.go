@@ -17,7 +17,7 @@ func (c *CephOrchPS) GetDaemonStatuses(daemonType string) ([]DaemonStatus, error
 	// Execute the command and capture the output
 	// For example: ceph orch ps --daemon-type rbd-mirror --format json
 
-	b, err := exec.Command("ceph", "orch", "ps", "--daemon-type", daemonType, "--format", "json").Output()
+	b, err := exec.Command("ceph", "orch", "ps", "--daemon-type", daemonType, "--format", "json").Output() //nolint:gosec // args from operator flags
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			slog.Error("ceph orch ps", "daemon_type", daemonType, "error", string(exitErr.Stderr))

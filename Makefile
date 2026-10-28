@@ -45,7 +45,7 @@ test:
 .PHONY: lint
 lint:
 	$(call PROMPT,$@)
-	golangci-lint run
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 run
 
 .PHONY: docker-build
 docker-build: ./out/linux-amd64/$(BINARY_NAME)

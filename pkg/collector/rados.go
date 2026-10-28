@@ -18,7 +18,7 @@ func (r *RadosListWatchers) GetWatchers(pool, object string) ([]Watcher, error) 
 	// Execute the command and capture the output
 	// For example: rados -p <pool> listwatchers rbd_mirror_leader
 
-	b, err := exec.Command("rados", "-p", pool, "listwatchers", object).Output()
+	b, err := exec.Command("rados", "-p", pool, "listwatchers", object).Output() //nolint:gosec // args from operator flags
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			slog.Error("rados listwatchers", "pool", pool, "object", object, "error", string(exitErr.Stderr))
