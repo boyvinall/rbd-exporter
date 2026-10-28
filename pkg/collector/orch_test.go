@@ -252,7 +252,7 @@ func TestCollector_collectDaemonMetrics(t *testing.T) {
 			var metrics []prometheus.Metric
 			for k, v := range tt.want {
 				metrics = append(metrics, prometheus.MustNewConstMetric(
-					prometheus.NewDesc("ceph_daemons", "Count of cephadm-managed Ceph daemons by type and status", []string{"daemon_type", "status"}, nil),
+					prometheus.NewDesc("cephadm_daemon_status", "Count of cephadm-managed Ceph daemons by type and status", []string{"daemon_type", "status"}, nil),
 					prometheus.GaugeValue,
 					v,
 					"rbd-mirror",
