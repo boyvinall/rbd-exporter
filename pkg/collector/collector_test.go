@@ -134,8 +134,8 @@ func TestCollector_collectPoolMetrics(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Collector{
-				pools:    tt.fields.pools,
-				provider: tt.fields.provider,
+				pools:        tt.fields.pools,
+				poolProvider: tt.fields.provider,
 			}
 			got, err := c.collectPoolMetrics(tt.args.pool)
 			if (err != nil) != tt.wantErr {
