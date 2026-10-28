@@ -31,9 +31,9 @@ A golangci-lint v2 install (e.g. the current Homebrew version) refuses the v1-fo
 | --- | --- | --- | --- |
 | `collectPoolMetrics(pool)` | `PoolStatusProvider` → `RBDMirrorPoolStatus` (`rbd.go`) | `rbd mirror pool status --format json <pool>` | `rbd_mirror_pool_status_state{pool,state}` |
 | `collectLeaderWatcherMetrics(pool)` | `WatcherProvider` → `RadosListWatchers` (`rados.go`) | `rados -p <pool> listwatchers rbd_mirror_leader` | `rbd_mirror_leader_watchers{pool}` |
-| `collectDaemonMetrics()` | `DaemonStatusProvider` → `CephOrchPS` (`orch.go`) | `ceph orch ps --daemon-type rbd-mirror --format json` | `rbd_mirror_daemons{status}` |
+| `collectDaemonMetrics(daemonType)` | `DaemonStatusProvider` → `CephOrchPS` (`orch.go`) | `ceph orch ps --daemon-type <daemonType> --format json` | `ceph_daemons{daemon_type,status}` |
 
-- **What `Collect` runs:** sources that take a pool argument run inside the loop over the `--pool` list. Cluster-wide sources (`ceph orch ps`) run once, after the loop. Inside the loop they would emit duplicate series, and Prometheus rejects the scrape.
+- **What `Collect` runs:** sources that take a pool argument run inside the loop over the `--pool` list; daemon sources run inside a loop over the `--daemon` list (defaulting to `rbd-mirror` when none is given). Each runs its command once per argument, labelling the series with that argument so they don't collide; emitting duplicate series makes Prometheus reject the scrape.
 - **Zero-filling:** known states and statuses are always reported, as zero when absent, and unknown values from Ceph are passed through.
 - **Errors:** each `collect*` result goes through the `send` closure, which turns an error into an invalid `rbd_exporter_error` metric, so sources fail independently. However, `promhttp.Handler()` uses default options, so any invalid metric makes the whole `/metrics` response an HTTP 500.
 

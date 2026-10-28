@@ -27,15 +27,17 @@ type WatcherProvider interface {
 // Collector is a Prometheus exporter for RBD mirror pool status
 type Collector struct {
 	pools           []string
+	daemonTypes     []string
 	provider        PoolStatusProvider
 	daemonProvider  DaemonStatusProvider
 	watcherProvider WatcherProvider
 }
 
 // New creates a new Collector instance
-func New(pools []string, provider PoolStatusProvider, daemonProvider DaemonStatusProvider, watcherProvider WatcherProvider) *Collector {
+func New(pools, daemonTypes []string, provider PoolStatusProvider, daemonProvider DaemonStatusProvider, watcherProvider WatcherProvider) *Collector {
 	return &Collector{
 		pools:           pools,
+		daemonTypes:     daemonTypes,
 		provider:        provider,
 		daemonProvider:  daemonProvider,
 		watcherProvider: watcherProvider,
@@ -100,8 +102,8 @@ func (c *Collector) collectPoolMetrics(pool string) ([]prometheus.Metric, error)
 	return metrics, nil
 }
 
-func (c *Collector) collectDaemonMetrics() ([]prometheus.Metric, error) {
-	daemons, err := c.daemonProvider.GetDaemonStatuses("rbd-mirror")
+func (c *Collector) collectDaemonMetrics(daemonType string) ([]prometheus.Metric, error) {
+	daemons, err := c.daemonProvider.GetDaemonStatuses(daemonType)
 	if err != nil {
 		return nil, err
 	}
@@ -119,9 +121,10 @@ func (c *Collector) collectDaemonMetrics() ([]prometheus.Metric, error) {
 	metrics := make([]prometheus.Metric, 0, len(counts))
 	for status, count := range counts {
 		metrics = append(metrics, prometheus.MustNewConstMetric(
-			prometheus.NewDesc("rbd_mirror_daemons", "Count of cephadm-managed rbd-mirror daemons by status", []string{"status"}, nil),
+			prometheus.NewDesc("ceph_daemons", "Count of cephadm-managed Ceph daemons by type and status", []string{"daemon_type", "status"}, nil),
 			prometheus.GaugeValue,
 			float64(count),
+			daemonType,
 			status,
 		))
 	}
@@ -164,7 +167,9 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		send(c.collectLeaderWatcherMetrics(pool))
 	}
 
-	send(c.collectDaemonMetrics())
+	for _, daemonType := range c.daemonTypes {
+		send(c.collectDaemonMetrics(daemonType))
+	}
 }
 
 // Describe implements the [prometheus.Collector] interface

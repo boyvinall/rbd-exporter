@@ -244,7 +244,7 @@ func TestCollector_collectDaemonMetrics(t *testing.T) {
 			c := &Collector{
 				daemonProvider: tt.fields.daemonProvider,
 			}
-			got, err := c.collectDaemonMetrics()
+			got, err := c.collectDaemonMetrics("rbd-mirror")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Collector.collectDaemonMetrics() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -252,9 +252,10 @@ func TestCollector_collectDaemonMetrics(t *testing.T) {
 			var metrics []prometheus.Metric
 			for k, v := range tt.want {
 				metrics = append(metrics, prometheus.MustNewConstMetric(
-					prometheus.NewDesc("rbd_mirror_daemons", "Count of cephadm-managed rbd-mirror daemons by status", []string{"status"}, nil),
+					prometheus.NewDesc("ceph_daemons", "Count of cephadm-managed Ceph daemons by type and status", []string{"daemon_type", "status"}, nil),
 					prometheus.GaugeValue,
 					v,
+					"rbd-mirror",
 					k,
 				))
 			}

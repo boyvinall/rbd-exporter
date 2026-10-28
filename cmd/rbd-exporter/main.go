@@ -30,9 +30,15 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		</html>`))
 }
 
-func serve(listenAddress string, pools []string) error {
+func serve(listenAddress string, pools, daemonTypes []string) error {
 
-	collector := collector.New(pools, &collector.RBDMirrorPoolStatus{}, &collector.CephOrchPS{}, &collector.RadosListWatchers{})
+	// Default to rbd-mirror when no daemon types are specified, since that's the
+	// exporter's primary use case.
+	if len(daemonTypes) == 0 {
+		daemonTypes = []string{"rbd-mirror"}
+	}
+
+	collector := collector.New(pools, daemonTypes, &collector.RBDMirrorPoolStatus{}, &collector.CephOrchPS{}, &collector.RadosListWatchers{})
 	err := prometheus.Register(collector)
 	if err != nil {
 		return err
@@ -106,7 +112,7 @@ func main() {
 				}
 				h := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: programLevel})
 				slog.SetDefault(slog.New(h))
-				return serve(c.String("listen-address"), c.StringSlice("pool"))
+				return serve(c.String("listen-address"), c.StringSlice("pool"), c.StringSlice("daemon"))
 			},
 			Flags: []cli.Flag{
 				&cli.StringFlag{
@@ -117,6 +123,11 @@ func main() {
 				&cli.StringSliceFlag{
 					Name:  "pool",
 					Usage: "Ceph pools to monitor",
+					Value: cli.NewStringSlice(),
+				},
+				&cli.StringSliceFlag{
+					Name:  "daemon",
+					Usage: "cephadm daemon types to monitor (defaults to rbd-mirror)",
 					Value: cli.NewStringSlice(),
 				},
 			},
