@@ -21,7 +21,7 @@ func (r *RBDMirrorPoolStatus) GetPoolStatus(pool string) (PoolStatus, error) {
 
 	// Execute the command and capture the output
 
-	b, err := exec.Command("rbd", "mirror", "pool", "status", "--format", "json", pool).Output()
+	b, err := exec.Command("rbd", "mirror", "pool", "status", "--format", "json", pool).Output() //nolint:gosec // args from operator flags
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			slog.Error("rbd mirror pool status", "pool", pool, "error", string(exitErr.Stderr))
