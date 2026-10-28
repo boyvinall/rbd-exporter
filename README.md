@@ -1,20 +1,15 @@
 # rbd-exporter
 
 This is an _experimental_ prometheus exporter to get some stats for Ceph RBD that don't seem to be available elsewhere.
-Specifically, looking to get the output of the following command into prometheus:
-
-```plaintext
-rbd mirror pool status <pool>
-```
-
-See <https://docs.ceph.com/en/reef/rbd/rbd-mirroring/#mirror-status> for more info on what this does.
-
-It also exports:
+It exports:
 
 | Metric | Source |
 | ------ | ------ |
-| `rbd_mirror_daemons{status}` | `ceph orch ps --daemon-type rbd-mirror` |
+| `rbd_mirror_pool_status_state{pool,state}` | `rbd mirror pool status <pool>` |
+| `ceph_daemons{daemon_type,status}` | `ceph orch ps --daemon-type <daemon>` |
 | `rbd_mirror_leader_watchers{pool}` | `rados -p <pool> listwatchers rbd_mirror_leader` |
+
+See <https://docs.ceph.com/en/reef/rbd/rbd-mirroring/#mirror-status> for more info on what the pool status means.
 
 A healthy mirror normally has as many leader watchers as running rbd-mirror daemons.
 
