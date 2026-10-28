@@ -28,17 +28,17 @@ type WatcherProvider interface {
 type Collector struct {
 	pools           []string
 	daemonTypes     []string
-	provider        PoolStatusProvider
+	poolProvider    PoolStatusProvider
 	daemonProvider  DaemonStatusProvider
 	watcherProvider WatcherProvider
 }
 
 // New creates a new Collector instance
-func New(pools, daemonTypes []string, provider PoolStatusProvider, daemonProvider DaemonStatusProvider, watcherProvider WatcherProvider) *Collector {
+func New(pools, daemonTypes []string, poolProvider PoolStatusProvider, daemonProvider DaemonStatusProvider, watcherProvider WatcherProvider) *Collector {
 	return &Collector{
 		pools:           pools,
 		daemonTypes:     daemonTypes,
-		provider:        provider,
+		poolProvider:    poolProvider,
 		daemonProvider:  daemonProvider,
 		watcherProvider: watcherProvider,
 	}
@@ -76,7 +76,7 @@ type Watcher struct {
 }
 
 func (c *Collector) collectPoolMetrics(pool string) ([]prometheus.Metric, error) {
-	s, err := c.provider.GetPoolStatus(pool)
+	s, err := c.poolProvider.GetPoolStatus(pool)
 	if err != nil {
 		return nil, err
 	}
